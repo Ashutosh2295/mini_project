@@ -4,7 +4,7 @@ import OrderList from './OrderList.jsx';
 import Checkout from './Checkout.jsx';
 import Payment from './Payment.jsx';
 import Footer from './Footer.jsx';
-import { formatPrice, calcTotal } from './utils.js';
+import { formatPrice, calcTotal, getCartWithCurrentPrices } from './utils.js';
 
 const API_URL = 'http://localhost:5000';
 
@@ -44,12 +44,20 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [currentView, setCurrentView] = useState('home'); // 'home' | 'products' | 'orders' | 'cart' | 'checkout' | 'payment'
     const [checkoutInfo, setCheckoutInfo] = useState(null); // shipping/contact info from checkout form
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch initial data
     useEffect(() => {
         fetchProducts();
         fetchOrders();
     }, []);
+
+    // Refetch products when viewing products or cart so frontend shows backend price/description updates
+    useEffect(() => {
+        if (currentView === 'products' || currentView === 'cart') {
+            fetchProducts();
+        }
+    }, [currentView]);
 
     const fetchProducts = async () => {
         try {
@@ -107,13 +115,14 @@ function App() {
     const placeOrder = async () => {
         if (cart.length === 0) return;
 
-        const total = Math.round(calcTotal(cart) * 100) / 100;
+        const resolvedCart = getCartWithCurrentPrices(cart, products);
+        const total = Math.round(calcTotal(resolvedCart) * 100) / 100;
 
         try {
             const response = await fetch(`${API_URL}/order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: cart, total })
+                body: JSON.stringify({ items: resolvedCart, total })
             });
 
             if (response.ok) {
@@ -205,8 +214,26 @@ function App() {
                 {currentView === 'products' && (
                     <div className="card">
                         <h2 className="section-title">🛍️ Available Products</h2>
+                        <div className="search-bar-wrap" style={{ marginBottom: '1rem' }}>
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search by name or description..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                aria-label="Search products"
+                            />
+                        </div>
                         <div className="product-list">
-                            {products.map((product) => (
+                            {products
+                                .filter((p) => {
+                                    const q = searchQuery.trim().toLowerCase();
+                                    if (!q) return true;
+                                    const matchName = p.name && p.name.toLowerCase().includes(q);
+                                    const matchDesc = p.description && p.description.toLowerCase().includes(q);
+                                    return matchName || matchDesc;
+                                })
+                                .map((product) => (
                                 <div key={product.id} className="card product-item">
                                     <div className="product-icon">{getIcon(product.name)}</div>
                                     <h3 className="product-name">{product.name}</h3>
@@ -231,6 +258,7 @@ function App() {
                     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                         <Cart
                             cart={cart}
+                            products={products}
                             updateQuantity={updateQuantity}
                             removeCompletely={removeCompletely}
                             onProceedToCheckout={() => setCurrentView('checkout')}
@@ -242,6 +270,7 @@ function App() {
                     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                         <Checkout
                             cart={cart}
+                            products={products}
                             onContinueToPayment={(info) => { setCheckoutInfo(info); setCurrentView('payment'); }}
                             onBack={() => setCurrentView('cart')}
                         />
@@ -252,6 +281,7 @@ function App() {
                     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                         <Payment
                             cart={cart}
+                            products={products}
                             checkoutInfo={checkoutInfo}
                             placeOrder={placeOrder}
                             onBack={() => setCurrentView('checkout')}

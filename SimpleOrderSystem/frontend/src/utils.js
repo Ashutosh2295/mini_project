@@ -11,3 +11,19 @@ export function formatPrice(amount) {
 export function calcTotal(items) {
     return items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
 }
+
+/**
+ * Merge cart items with current product data (price, name, description) from API.
+ * When backend updates price/description, cart display and order use latest values.
+ */
+export function getCartWithCurrentPrices(cart, products) {
+    if (!Array.isArray(products) || products.length === 0) return cart;
+    const byId = Object.fromEntries(products.map((p) => [p.id, p]));
+    return cart.map((item) => {
+        const current = byId[item.id];
+        if (current) {
+            return { ...item, price: current.price, name: current.name, description: current.description };
+        }
+        return item;
+    });
+}

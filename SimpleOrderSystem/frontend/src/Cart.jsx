@@ -1,8 +1,9 @@
 import React from 'react';
-import { formatPrice, calcTotal } from './utils.js';
+import { formatPrice, calcTotal, getCartWithCurrentPrices } from './utils.js';
 
-function Cart({ cart, updateQuantity, removeCompletely, onProceedToCheckout }) {
-    const total = calcTotal(cart);
+function Cart({ cart, products, updateQuantity, removeCompletely, onProceedToCheckout }) {
+    const resolvedCart = getCartWithCurrentPrices(cart, products || []);
+    const total = calcTotal(resolvedCart);
 
     return (
         <div className="card cart-section">
@@ -14,10 +15,11 @@ function Cart({ cart, updateQuantity, removeCompletely, onProceedToCheckout }) {
                 </p>
             ) : (
                 <>
-                    {cart.map((item) => (
+                    {resolvedCart.map((item) => (
                         <div key={item.id} className="cart-item">
                             <div className="cart-info">
                                 <h4>{item.name}</h4>
+                                {item.description && <p className="product-description" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{item.description}</p>}
                                 <p>{formatPrice(item.price)} × {item.quantity}</p>
                             </div>
                             <div className="cart-actions">

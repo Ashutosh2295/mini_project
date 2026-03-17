@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatPrice, calcTotal } from './utils.js';
+import { formatPrice, calcTotal, getCartWithCurrentPrices } from './utils.js';
 
 const initialForm = {
     fullName: '',
@@ -11,10 +11,11 @@ const initialForm = {
     zip: ''
 };
 
-function Checkout({ cart, onContinueToPayment, onBack }) {
+function Checkout({ cart, products, onContinueToPayment, onBack }) {
     const [form, setForm] = useState(initialForm);
     const [errors, setErrors] = useState({});
-    const total = calcTotal(cart);
+    const resolvedCart = getCartWithCurrentPrices(cart, products || []);
+    const total = calcTotal(resolvedCart);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -60,7 +61,7 @@ function Checkout({ cart, onContinueToPayment, onBack }) {
 
             <div className="checkout-summary">
                 <h3>Order summary</h3>
-                {cart.map((item) => (
+                {resolvedCart.map((item) => (
                     <div key={item.id} className="checkout-item">
                         <span className="name">{item.name} × {item.quantity}</span>
                         <span className="subtotal">{formatPrice(Number(item.price) * item.quantity)}</span>
