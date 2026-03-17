@@ -1,33 +1,55 @@
 import React from 'react';
+import { formatPrice } from './utils.js';
 
-function OrderList({ orders }) {
+const DEFAULT_ICONS = {
+    'Laptop': '💻', 'Wireless Mouse': '🖱️', 'Mechanical Keyboard': '⌨️', 'Headphones': '🎧', 'Monitor': '🖥️',
+    'USB-C Hub': '🔌', 'Ergonomic Chair': '🪑', 'Webcam': '📷', 'Desk Lamp': '💡', 'Microphone': '🎤',
+    'Speakers': '🔊', 'External Hard Drive': '💾', 'Smartphone Stand': '📱', 'Wireless Charger': '⚡',
+    'Tablet': '📱', 'Smartwatch': '⌚', 'Gaming Controller': '🎮', 'Router': '📡', 'Printer': '🖨️',
+    'Desk Mat': '🖱️', 'Drawing Tablet': '✒️', 'Earbuds': '🎧', 'Network Switch': '🖧', 'Flash Drive': '🖊️',
+    'SD Card Reader': '📇'
+};
+
+function getOrderIcon(itemName, getIcon) {
+    if (typeof getIcon === 'function') return getIcon(itemName);
+    return DEFAULT_ICONS[itemName] || '📦';
+}
+
+function OrderList({ orders, getIcon }) {
     if (orders.length === 0) return null;
 
-    // Render orders in descending order (newest first)
     const reversedOrders = [...orders].reverse();
 
     return (
         <div className="card orders-section">
             <h2 className="section-title">📦 Order History</h2>
-
-            {reversedOrders.map((order) => (
-                <div key={order.id} className="order-item">
-                    <div className="order-header">
-                        <span style={{ fontWeight: 'bold', color: 'var(--text-color)' }}>Order #{order.id}</span>
-                        <span>{new Date(order.date).toLocaleString()}</span>
-                    </div>
-                    <ul style={{ paddingLeft: '1.5rem', color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.5rem' }}>
-                        {order.items.map((item, idx) => (
-                            <li key={idx}>
-                                {item.name} - {item.quantity} x ${item.price.toFixed(2)}
-                            </li>
-                        ))}
-                    </ul>
-                    <div className="order-total">
-                        Total Paid: ${order.total.toFixed(2)}
-                    </div>
-                </div>
-            ))}
+            <div className="order-list-grid">
+                {reversedOrders.map((order) => {
+                    const firstItemName = order.items && order.items[0] ? order.items[0].name : null;
+                    const orderIcon = getOrderIcon(firstItemName, getIcon);
+                    return (
+                        <div key={order.id} className="order-item">
+                            <div className="order-card-image" aria-hidden="true">
+                                {orderIcon}
+                            </div>
+                            <div className="order-header">
+                                <span className="order-id">Order #{order.id}</span>
+                                <span className="order-date">{new Date(order.date).toLocaleString('en-IN')}</span>
+                            </div>
+                            <ul className="order-items-list">
+                                {order.items.map((item, idx) => (
+                                    <li key={idx}>
+                                        {item.name} – {item.quantity} × {formatPrice(item.price)}
+                                    </li>
+                                ))}
+                            </ul>
+                            <div className="order-total">
+                                Total: {formatPrice(order.total)}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

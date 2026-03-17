@@ -1,7 +1,8 @@
 import React from 'react';
+import { formatPrice, calcTotal } from './utils.js';
 
-function Cart({ cart, updateQuantity, placeOrder, removeCompletely }) {
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+function Cart({ cart, updateQuantity, removeCompletely, onProceedToCheckout }) {
+    const total = calcTotal(cart);
 
     return (
         <div className="card cart-section">
@@ -17,7 +18,7 @@ function Cart({ cart, updateQuantity, placeOrder, removeCompletely }) {
                         <div key={item.id} className="cart-item">
                             <div className="cart-info">
                                 <h4>{item.name}</h4>
-                                <p>${item.price.toFixed(2)} x {item.quantity}</p>
+                                <p>{formatPrice(item.price)} × {item.quantity}</p>
                             </div>
                             <div className="cart-actions">
                                 <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>-</button>
@@ -37,19 +38,14 @@ function Cart({ cart, updateQuantity, placeOrder, removeCompletely }) {
 
                     <div className="cart-total">
                         <span>Total:</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>{formatPrice(total)}</span>
                     </div>
 
                     <button
-                        onClick={placeOrder}
-                        style={{
-                            marginTop: '1rem',
-                            background: 'linear-gradient(to right, #10b981, #059669)',
-                            padding: '1rem',
-                            fontSize: '1.1rem'
-                        }}
+                        onClick={onProceedToCheckout}
+                        className="cart-checkout-btn"
                     >
-                        Place Order
+                        Proceed to Checkout
                     </button>
                 </>
             )}
